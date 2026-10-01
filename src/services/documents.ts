@@ -62,7 +62,7 @@ export async function uploadDocument(
   const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
   
   // 1. Upload to Supabase Storage
-  const { data: uploadData, error: uploadError } = await supabase
+  const { error: uploadError } = await supabase
     .storage
     .from(BUCKET_NAME)
     .upload(fileName, file, { cacheControl: '3600', upsert: false });
