@@ -10,7 +10,10 @@ import {
   Settings,
   Bot,
   Shield,
+  LogOut,
 } from 'lucide-react';
+import { logout } from '../../services/auth';
+import { useNavigate } from 'react-router-dom';
 
 const navItems = [
   { label: 'Dashboard', to: '/admin', icon: LayoutDashboard, end: true },
@@ -31,6 +34,12 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export default function AdminSidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 w-56">
       {/* Logo */}
@@ -74,6 +83,14 @@ export default function AdminSidebar() {
           <MessageSquare size={16} className="text-gray-400" />
           Student View
         </NavLink>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 transition-colors"
+        >
+          <LogOut size={16} className="text-red-500" />
+          Sign Out
+        </button>
 
         <div className="flex items-center gap-3 px-3 py-2 mt-1">
           <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">

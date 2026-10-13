@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Bot, Eye, EyeOff, GraduationCap } from 'lucide-react';
-import { login } from '../services/auth';
+import { Bot, Eye, EyeOff, GraduationCap, ShieldCheck } from 'lucide-react';
+import { login, DEMO_STUDENT } from '../services/auth';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async (id: string, pwd: string) => {
     setLoading(true);
     setError(null);
     try {
-      await login(email, password);
-      navigate('/chat', { replace: true });
+      const user = await login(id, pwd);
+      if (user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/chat', { replace: true });
+      }
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code || '';
       if (code === 'auth/user-not-found' || code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
@@ -32,6 +35,23 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSignIn(identifier, password);
+  };
+
+  const quickLoginAdmin = () => {
+    setIdentifier('admin');
+    setPassword('admin123');
+    handleSignIn('admin', 'admin123');
+  };
+
+  const quickLoginStudent = () => {
+    setIdentifier('s@kct.ac.in');
+    setPassword('12345678');
+    handleSignIn('s@kct.ac.in', '12345678');
   };
 
   return (
@@ -87,13 +107,13 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                Email Address
+                Email Address or Username
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@kct.ac.in"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="you@kct.ac.in or admin"
                 required
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700"
               />
@@ -132,7 +152,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 text-white text-sm font-semibold rounded-xl transition-colors"
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-70 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -145,21 +165,45 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {/* Quick access */}
-          <div className="mt-6 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center mb-2 font-medium">Demo Access</p>
-            <button
-              onClick={() => { setEmail('s@kct.ac.in'); setPassword('12345678'); }}
-              className="w-full text-xs text-indigo-600 dark:text-indigo-400 py-1 hover:underline"
-            >
-              Fill student credentials
-            </button>
-            <button
-              onClick={() => navigate('/admin')}
-              className="w-full text-xs text-gray-500 dark:text-gray-400 py-1 hover:text-gray-700 dark:hover:text-gray-200"
-            >
-              Go to Admin Portal →
-            </button>
+          {/* Quick Access Demo Badges */}
+          <div className="mt-6 p-3.5 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700">
+            <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center mb-2.5">
+              Instant Demo Access
+            </p>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => { setIdentifier(DEMO_STUDENT.email); setPassword('12345678'); }}
+                className="px-2.5 py-1.5 text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-lg border border-indigo-200 dark:border-indigo-800 text-center transition-colors"
+              >
+                Fill Student
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIdentifier('admin'); setPassword('admin123'); }}
+                className="px-2.5 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 rounded-lg border border-purple-200 dark:border-purple-800 text-center transition-colors"
+              >
+                Fill Admin
+              </button>
+            </div>
+            <div className="space-y-1.5 pt-1 border-t border-gray-200/60 dark:border-gray-700/60">
+              <button
+                type="button"
+                onClick={quickLoginStudent}
+                className="w-full text-xs text-indigo-600 dark:text-indigo-400 py-1 hover:underline font-medium text-center flex items-center justify-center gap-1.5"
+              >
+                <GraduationCap size={13} />
+                One-Click Student Login →
+              </button>
+              <button
+                type="button"
+                onClick={quickLoginAdmin}
+                className="w-full text-xs text-purple-600 dark:text-purple-400 py-1 hover:underline font-medium text-center flex items-center justify-center gap-1.5"
+              >
+                <ShieldCheck size={13} />
+                One-Click Admin Login →
+              </button>
+            </div>
           </div>
         </div>
       </div>
