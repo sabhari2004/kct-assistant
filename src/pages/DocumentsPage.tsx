@@ -1,20 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Upload } from 'lucide-react';
 import { mockDocuments } from '../data/mockData';
+import { getDocuments } from '../services/documents';
 import DocumentCard from '../components/ui/DocumentCard';
 import FileUploadModal from '../components/modals/FileUploadModal';
-import type { DocumentCategory } from '../types';
+import type { DocumentCategory, CollegeDocument } from '../types';
 
 const filterTabs: DocumentCategory[] = [
-  'All', 'Syllabus', 'Regulations', 'Academic Calendar', 'Notices', 'Placements',
+  'All',
+  'Syllabus',
+  'Regulations',
+  'Academic Calendar',
+  'Notices',
+  'Placements',
 ];
 
 export default function DocumentsPage() {
+  const [documents, setDocuments] = useState<CollegeDocument[]>(mockDocuments);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<DocumentCategory>('All');
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  const filtered = mockDocuments.filter((doc) => {
+  const fetchCloudDocuments = useCallback(async () => {
+    try {
+      const cloudDocs = await getDocuments();
+      if (cloudDocs && cloudDocs.length > 0) {
+        const cloudIds = new Set(cloudDocs.map((d) => d.id));
+        const remainingMock = mockDocuments.filter((d) => !cloudIds.has(d.id));
+        setDocuments([...cloudDocs, ...remainingMock]);
+      }
+    } catch {
+      // Gracefully keep mock documents if offline
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCloudDocuments();
+  }, [fetchCloudDocuments]);
+
+  const filtered = documents.filter((doc) => {
     const matchSearch =
       doc.name.toLowerCase().includes(search.toLowerCase()) ||
       doc.category.toLowerCase().includes(search.toLowerCase());
@@ -35,7 +59,7 @@ export default function DocumentsPage() {
           </div>
           <button
             onClick={() => setUploadOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors flex-shrink-0"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl transition-colors flex-shrink-0 shadow-sm"
           >
             <Upload size={15} />
             Upload
@@ -62,8 +86,8 @@ export default function DocumentsPage() {
               onClick={() => setFilter(tab)}
               className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
                 filter === tab
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
               {tab}
@@ -71,26 +95,20 @@ export default function DocumentsPage() {
           ))}
         </div>
 
-        {/* Results */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <Search size={36} className="text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-gray-400 font-medium">No documents found</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Try adjusting your search or filters.</p>
-          </div>
-        ) : (
-          <>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">{filtered.length} document{filtered.length !== 1 ? 's' : ''}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {filtered.map((doc) => (
-                <DocumentCard key={doc.id} doc={doc} />
-              ))}
-            </div>
-          </>
-        )}
+        {/* Document Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((doc) => (
+            <DocumentCard key={doc.id} doc={doc} />
+          ))}
+        </div>
       </div>
 
-      {uploadOpen && <FileUploadModal onClose={() => setUploadOpen(false)} />}
+      {uploadOpen && (
+        <FileUploadModal
+          onClose={() => setUploadOpen(false)}
+          onUploaded={fetchCloudDocuments}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { FileText, Archive } from 'lucide-react';
+import { FileText, Archive, Download } from 'lucide-react';
 import type { CollegeDocument } from '../../types';
 
 interface DocumentCardProps {
@@ -57,6 +57,19 @@ export default function DocumentCard({ doc }: DocumentCardProps) {
               {doc.status}
             </span>
           </div>
+          {doc.downloadUrl && (
+            <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+              <a
+                href={doc.downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 text-xs font-medium rounded-lg transition-colors"
+              >
+                <Download size={12} />
+                Download / View
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </div>

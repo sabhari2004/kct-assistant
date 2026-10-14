@@ -61,6 +61,7 @@ export interface CollegeDocument {
   size: string;
   updatedAt: Date;
   status: DocumentStatus;
+  downloadUrl?: string;
 }
 
 // ────────── Notifications ──────────
