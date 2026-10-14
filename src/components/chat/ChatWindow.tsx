@@ -4,6 +4,7 @@ import TypingIndicator from './TypingIndicator';
 import WelcomeScreen from './WelcomeScreen';
 import MessageInput from './MessageInput';
 import type { Conversation } from '../../types';
+import type { ExtractedDocument } from '../../services/documentExtractor';
 import { AlertTriangle, RefreshCw, Loader2 } from 'lucide-react';
 
 interface ChatWindowProps {
@@ -11,7 +12,7 @@ interface ChatWindowProps {
   isTyping: boolean;
   loadingHistory: boolean;
   error: string | null;
-  onSend: (message: string) => void;
+  onSend: (message: string, attachment?: ExtractedDocument | null) => void;
   onFeedback: (messageId: string, liked: boolean | null) => void;
   onClearError: () => void;
 }

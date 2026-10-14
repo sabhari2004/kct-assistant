@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, ThumbsUp, ThumbsDown, RotateCcw, Check, Database } from 'lucide-react';
+import { Copy, ThumbsUp, ThumbsDown, RotateCcw, Check, Database, Paperclip } from 'lucide-react';
 import type { Message } from '../../types';
 
 interface ChatMessageProps {
@@ -51,6 +51,13 @@ export default function ChatMessage({ message, onFeedback, onRegenerate }: ChatM
     return (
       <div className="flex justify-end mb-4 message-appear">
         <div className="flex flex-col items-end gap-1 max-w-[75%] sm:max-w-[60%]">
+          {message.attachment && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs border border-indigo-200 dark:border-indigo-800 shadow-sm">
+              <Paperclip size={12} className="text-indigo-500" />
+              <span className="font-semibold truncate max-w-[200px]">{message.attachment.fileName}</span>
+              <span className="text-[10px] text-indigo-400">({message.attachment.fileSize})</span>
+            </div>
+          )}
           <div className="bg-indigo-600 text-white px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed">
             {message.content}
           </div>
@@ -68,6 +75,7 @@ export default function ChatMessage({ message, onFeedback, onRegenerate }: ChatM
 
   // AI message
   const rendered = renderMarkdown(message.content);
+  const docSource = message.sources?.find(s => s !== 'KCT Knowledge Base');
 
   return (
     <div className="flex gap-3 mb-4 message-appear">
@@ -80,12 +88,17 @@ export default function ChatMessage({ message, onFeedback, onRegenerate }: ChatM
         {/* Label */}
         <div className="flex items-center gap-2 px-1">
           <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">AI Assistant</span>
-          {message.sources && message.sources.length > 0 && (
+          {docSource ? (
+            <span className="flex items-center gap-1 text-[10px] text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 px-2 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800 font-medium">
+              <Paperclip size={10} />
+              Referencing {docSource}
+            </span>
+          ) : message.sources && message.sources.length > 0 ? (
             <span className="flex items-center gap-1 text-[10px] text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-900">
               <Database size={9} />
               Based on college information
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Bubble */}

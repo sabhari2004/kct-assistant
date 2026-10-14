@@ -10,6 +10,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Message, Conversation } from '../types';
+import type { ExtractedDocument } from '../services/documentExtractor';
 import { sendMessageToAI } from '../services/groq';
 import { auth, db } from '../services/firebase';
 import {
@@ -36,7 +37,7 @@ interface UseChatReturn {
   isTyping: boolean;
   loadingHistory: boolean;
   error: string | null;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, attachment?: ExtractedDocument | null) => Promise<void>;
   clearError: () => void;
   startNewChat: () => void;
   updateMessageFeedback: (messageId: string, liked: boolean | null) => void;
@@ -133,12 +134,20 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   }, [initialQuestion]);
 
   // ── Core send function ─────────────────────────────────────────────────────
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, attachment?: ExtractedDocument | null) => {
+    const trimmed = content.trim();
+    const finalContent = trimmed || (attachment ? `Please analyze and summarize the attached document: ${attachment.fileName}.` : '');
+    if (!finalContent) return;
+
     const userMessage: Message = {
       id: `msg-${Date.now()}-user`,
       role: 'user',
-      content,
+      content: finalContent,
       timestamp: new Date(),
+      attachment: attachment ? {
+        fileName: attachment.fileName,
+        fileSize: attachment.fileSize,
+      } : undefined,
     };
 
     setError(null);
@@ -153,7 +162,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         localIdRef.current += 1;
         isFirstMessage = true;
         historyBeforeThisMessage = [];
-        localTitle = content.slice(0, 60);
+        localTitle = finalContent.slice(0, 60);
         return {
           id: `conv-local-${localIdRef.current}`,
           title: localTitle,
@@ -174,13 +183,17 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setIsTyping(true);
 
     try {
-      const aiContent = await sendMessageToAI(content, historyBeforeThisMessage);
+      const extraContext = attachment ? [
+        `\n=== USER ATTACHED DOCUMENT: ${attachment.fileName} ===\n${attachment.text}\n=== END OF ATTACHED DOCUMENT CONTENT ===\nINSTRUCTION: The user has attached this document. Answer their questions accurately and in detail using the information in this document.`
+      ] : [];
+
+      const aiContent = await sendMessageToAI(finalContent, historyBeforeThisMessage, extraContext);
       const aiMessage: Message = {
         id: `msg-${Date.now()}-ai`,
         role: 'assistant',
         content: aiContent,
         timestamp: new Date(),
-        sources: ['KCT Knowledge Base'],
+        sources: attachment ? [attachment.fileName, 'KCT Knowledge Base'] : ['KCT Knowledge Base'],
       };
 
       setConversation((prev) => {

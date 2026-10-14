@@ -19,6 +19,10 @@ export interface Message {
   timestamp: Date;
   sources?: string[];
   liked?: boolean | null;
+  attachment?: {
+    fileName: string;
+    fileSize: string;
+  };
 }
 
 export interface Conversation {
